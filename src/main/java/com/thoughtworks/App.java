@@ -1,6 +1,7 @@
 package com.thoughtworks;
 
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 public class App {
 
@@ -19,7 +20,65 @@ public class App {
    */
   public static String bestCharge(String selectedItems) {
     // 此处补全代码
-    return selectedItems;
+    String[] foodIdAndCounts = selectedItems.split(",");
+    StringBuilder originalFoodInfos = new StringBuilder();
+    int firstPrice = 0;
+
+    int secondPrice = 0;
+    int secondDiscountPrice = 0;
+
+    int finalPrice;
+    String discountDetail = "";
+
+    for (String foodIdAndCount : foodIdAndCounts) {
+
+      String[] foodInfos = foodIdAndCount.split("x");
+      String foodId = foodInfos[0].trim();
+      int index = IntStream.range(0, getItemIds().length)
+          .filter(i -> foodId.equals(getItemIds()[i]))
+          .findFirst()
+          .orElse(-1);
+      int count = Integer.valueOf(foodInfos[1].trim());
+      double itemPrice = getItemPrices()[index];
+      int singleTypePrice = (int) (itemPrice * count);
+
+      firstPrice += singleTypePrice;
+
+      boolean isHalf = false;
+      for (String element : getHalfPriceIds()) {
+        if (element.equals(foodId)) {
+          isHalf = true;
+        }
+      }
+
+      if (isHalf) {
+        secondPrice += singleTypePrice / 2;
+        secondDiscountPrice += singleTypePrice / 2;
+      } else {
+        secondPrice += singleTypePrice;
+      }
+      originalFoodInfos.append(getItemNames()[index]).append(" x ").append(count).append(" = ").append(singleTypePrice).append("元\n");
+    }
+
+    if (firstPrice >= 30) {
+      firstPrice = firstPrice - 6;
+      discountDetail = "-----------------------------------\n" +"使用优惠:\n" +"满30减6元，省6元\n";
+    }
+
+    if (firstPrice <= secondPrice) {
+      finalPrice = firstPrice;
+    } else {
+      discountDetail = "-----------------------------------\n" + "使用优惠:\n" + "指定菜品半价(黄焖鸡，凉皮)，省" + secondDiscountPrice + "元\n";
+      finalPrice = secondPrice;
+    }
+
+    String foodDetails = "============= 订餐明细 =============\n"
+        + originalFoodInfos
+        + discountDetail
+        + "-----------------------------------\n"
+        + "总计：" + finalPrice + "元\n"
+        + "===================================";
+    return foodDetails;
   }
 
   /**
