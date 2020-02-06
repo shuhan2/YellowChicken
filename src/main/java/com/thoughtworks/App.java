@@ -1,5 +1,6 @@
 package com.thoughtworks;
 
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.stream.IntStream;
 
@@ -20,65 +21,74 @@ public class App {
    */
   public static String bestCharge(String selectedItems) {
     // 此处补全代码
-    String[] foodIdAndCounts = selectedItems.split(",");
     StringBuilder originalFoodInfos = new StringBuilder();
-    int firstPrice = 0;
+    int firstCharge = 0;
+    int secondCharge = 0;
 
-    int secondPrice = 0;
-    int secondDiscountPrice = 0;
-
-    int finalPrice;
+    int bestCharge;
     String discountDetail = "";
 
-    for (String foodIdAndCount : foodIdAndCounts) {
-
+    for (String foodIdAndCount : selectedItems.split(",")) {
       String[] foodInfos = foodIdAndCount.split("x");
-      String foodId = foodInfos[0].trim();
-      int index = IntStream.range(0, getItemIds().length)
-          .filter(i -> foodId.equals(getItemIds()[i]))
-          .findFirst()
-          .orElse(-1);
+      Food food = generateFood(foodInfos[0].trim());
       int count = Integer.valueOf(foodInfos[1].trim());
-      double itemPrice = getItemPrices()[index];
-      int singleTypePrice = (int) (itemPrice * count);
+      int singleTypeFoodMoney = (int) (food.getPrice() * count);
 
-      firstPrice += singleTypePrice;
+      originalFoodInfos.append(food.getName())
+          .append(" x ")
+          .append(count)
+          .append(" = ")
+          .append(singleTypeFoodMoney)
+          .append("元\n");
 
-      boolean isHalf = false;
-      for (String element : getHalfPriceIds()) {
-        if (element.equals(foodId)) {
-          isHalf = true;
-        }
-      }
+      firstCharge += singleTypeFoodMoney;
 
-      if (isHalf) {
-        secondPrice += singleTypePrice / 2;
-        secondDiscountPrice += singleTypePrice / 2;
-      } else {
-        secondPrice += singleTypePrice;
-      }
-      originalFoodInfos.append(getItemNames()[index]).append(" x ").append(count).append(" = ").append(singleTypePrice).append("元\n");
+      secondCharge += addSecondCharge(singleTypeFoodMoney, food.getId());
+
     }
 
-    if (firstPrice >= 30) {
-      firstPrice = firstPrice - 6;
-      discountDetail = "-----------------------------------\n" +"使用优惠:\n" +"满30减6元，省6元\n";
+    int secondDiscountCharge = firstCharge - secondCharge;
+
+    if (firstCharge >= 30) {
+      firstCharge = firstCharge - 6;
+      discountDetail = getDiscountDetail(6, "满30减6元");
     }
 
-    if (firstPrice <= secondPrice) {
-      finalPrice = firstPrice;
+    if (firstCharge  <= secondCharge) {
+      bestCharge = firstCharge;
     } else {
-      discountDetail = "-----------------------------------\n" + "使用优惠:\n" + "指定菜品半价(黄焖鸡，凉皮)，省" + secondDiscountPrice + "元\n";
-      finalPrice = secondPrice;
+      discountDetail = getDiscountDetail(secondDiscountCharge, "指定菜品半价(黄焖鸡，凉皮)");
+      bestCharge = secondCharge;
     }
 
     String foodDetails = "============= 订餐明细 =============\n"
         + originalFoodInfos
         + discountDetail
         + "-----------------------------------\n"
-        + "总计：" + finalPrice + "元\n"
+        + "总计：" + bestCharge + "元\n"
         + "===================================";
     return foodDetails;
+  }
+
+  private static String getDiscountDetail(int discount, String discountChoice) {
+    return "-----------------------------------\n" + "使用优惠:\n" + discountChoice + "，省" + discount + "元\n";
+  }
+
+  private static int addSecondCharge(int singleTypeFoodMoney, String foodId) {
+    if (Arrays.asList(getHalfPriceIds()).contains(foodId)) {
+      return singleTypeFoodMoney / 2;
+    } else {
+      return singleTypeFoodMoney;
+    }
+  }
+
+  private static Food generateFood(String foodId) {
+    int index = IntStream.range(0, getItemIds().length)
+        .filter(i -> foodId.equals(getItemIds()[i]))
+        .findFirst()
+        .orElse(-1);
+
+    return new Food(foodId, getItemNames()[index], getItemPrices()[index]);
   }
 
   /**
